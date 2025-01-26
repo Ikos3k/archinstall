@@ -1,10 +1,18 @@
 #!/bin/bash
 
+echo " '||''|.             .     .                       |                     '||      "
+echo "  ||   ||    ....  .||.  .||.    ....  ... ..     |||    ... ..    ....   || ..   "
+echo "  ||'''|.  .|...||  ||    ||   .|...||  ||' ''   |  ||    ||' '' .|   ''  ||' ||  "
+echo "  ||    || ||       ||    ||   ||       ||      .''''|.   ||     ||       ||  ||  "
+echo " .||...|'   '|...'  '|.'  '|.'  '|...' .||.    .|.  .||. .||.     '|...' .||. ||. "
+echo -e "\n\n\n"
+
 DISK_DEVICE="/dev/sda"
 BOOT_PARTITION="/dev/sda1"
 SWAP_PARTITION="/dev/sda2"
 ROOT_PARTITION="/dev/sda3"
 EFI_RESPONSE="yes"
+AUR_RESPONSE="yes"
 HOSTNAME="computer"
 ROOT_PASSWORD=""
 USER_NAME=""
@@ -125,6 +133,16 @@ echo "Enter the hostname:"
 read user_input
 HOSTNAME="${user_input:-$HOSTNAME}"
 
+read -p "Do you want to install yay AUR helper? [Y/n] " AUR_RESPONSE
+case "$AUR_RESPONSE" in
+    [nN][oO]|[nN])
+        AUR_RESPONSE="no"
+        ;;
+    *)
+        AUR_RESPONSE="yes"
+        ;;
+esac
+
 echo "Formatting the partitions..."
 if [ "$EFI_RESPONSE" = "yes" ]; then
     mkfs.fat -F 32 $BOOT_PARTITION
@@ -163,7 +181,16 @@ genfstab -U /mnt > /mnt/etc/fstab #genfstab -L
 echo "Chrooting into the new system..."
 arch-chroot /mnt /bin/bash -c '
 echo "Installing additional packages..."
-pacman -S --noconfirm networkmanager nano wget noto-fonts ly xorg-server xorg-xinit xorg-xrandr xorg-xset xorg-xrdb xorg-xauth i3-wm i3status i3lock dmenu xterm
+pacman -S --noconfirm networkmanager nano wget noto-fonts ly xorg-server xorg-xinit xorg-xrandr xorg-xset xorg-xrdb xorg-xauth i3-wm i3status i3lock dmenu
+
+mkdir suckless
+cd suckless
+
+echo "Building and installing suckless st..."
+git clone --depth=1 https://git.suckless.org/st
+cd st
+make -j$(nproc)
+make install
 
 echo "Setting timezone..."
 ln -sf /usr/share/zoneinfo/Europe/Warsaw /etc/localtime
@@ -192,6 +219,19 @@ echo "'$USER_NAME':'$USER_PASSWORD'" | chpasswd
 
 echo "Adding user to sudoers..."
 echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
+
+echo "Creating user directories..."
+#pacman -S --noconfirm xdg-user-dirs
+#sudo -u "'"$USER_NAME"'" xdg-user-dirs-update
+sudo -u "'"$USER_NAME"'" mkdir -p /home/"'"$USER_NAME"'"/{Desktop,Downloads,Documents,Music,Pictures,Videos} # Desktop,Downloads,Documents,Music,Pictures,Videos,Templates,Public
+2
+if [ "'$AUR_RESPONSE'" = "yes" ]; then
+    pacman -S --noconfirm git
+    echo "Installing yay..."
+    sudo -u "'$USER_NAME'" git clone --depth=1 https://aur.archlinux.org/yay.git /home/"'$USER_NAME'"/yay
+    cd /home/"'$USER_NAME'"/yay
+    sudo -u "'$USER_NAME'" makepkg -si --noconfirm
+fi
 
 echo "Installing GRUB..."
 if [ "'$EFI_RESPONSE'" = "yes" ]; then
