@@ -224,7 +224,7 @@ echo "Creating user directories..."
 #pacman -S --noconfirm xdg-user-dirs
 #sudo -u "'"$USER_NAME"'" xdg-user-dirs-update
 sudo -u "'"$USER_NAME"'" mkdir -p /home/"'"$USER_NAME"'"/{Desktop,Downloads,Documents,Music,Pictures,Videos} # Desktop,Downloads,Documents,Music,Pictures,Videos,Templates,Public
-2
+
 if [ "'$AUR_RESPONSE'" = "yes" ]; then
     pacman -S --noconfirm git
     echo "Installing yay..."
