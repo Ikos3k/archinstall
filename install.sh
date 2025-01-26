@@ -158,13 +158,12 @@ if [ "$EFI_RESPONSE" = "yes" ]; then
 fi
 
 echo "Generating fstab..."
-genfstab -U /mnt >> /mnt/etc/fstab #genfstab -L
+genfstab -U /mnt > /mnt/etc/fstab #genfstab -L
 
 echo "Chrooting into the new system..."
-
 arch-chroot /mnt /bin/bash -c '
 echo "Installing additional packages..."
-pacman -S --noconfirm networkmanager nano wget
+pacman -S --noconfirm networkmanager nano wget noto-fonts ly xorg-server xorg-xinit xorg-xrandr xorg-xset xorg-xrdb xorg-xauth i3-wm i3status i3lock dmenu xterm
 
 echo "Setting timezone..."
 ln -sf /usr/share/zoneinfo/Europe/Warsaw /etc/localtime
@@ -178,8 +177,7 @@ echo "LANG=en_US.UTF-8" >> /etc/locale.conf
 echo "Enabling NetworkManager..."
 systemctl enable NetworkManager
 
-pacman -S --noconfirm noto-fonts ly xorg-server xorg-xinit xorg-xrandr xorg-xset xorg-xrdb xorg-xauth i3-wm i3status i3lock i3bar dmenu xterm
-
+echo "Enabling Display Manager..."
 systemctl enable ly
 
 echo "Setting hostname..."
@@ -197,7 +195,7 @@ echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
 
 echo "Installing GRUB..."
 if [ "'$EFI_RESPONSE'" = "yes" ]; then
-  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
+  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck # --bootloader-id=grub_uefi
 else
   grub-install --target=i386-pc "'$DISK_DEVICE'" # --grub-setup=/bin/true
 fi
